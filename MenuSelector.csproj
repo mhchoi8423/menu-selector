@@ -54,6 +54,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FisherYates.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="MenuLoader.cs" />
+    <Compile Include="MenuNotifier.cs" />
     <Compile Include="MenuSelector.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
