@@ -29,6 +29,7 @@ namespace MenuSelector
 
         private readonly RestClient _restClient = new RestClient(ConfigurationManager.AppSettings["WebhookUrl"]);
         private readonly List<string> _menu = new List<string>();
+        private readonly Queue<string> _shuffledMenu = new Queue<string>();
 
         private int _noticeHour;
         private int _noticeMin;
@@ -87,9 +88,27 @@ namespace MenuSelector
 
         public async Task Update()
         {
+            ShuffleIfNeeded();
+
             if (IsTimeUp())
             {
                 await Notice();
+            }
+        }
+
+        private void ShuffleIfNeeded()
+        {
+            if (DateTime.Now.DayOfWeek != DayOfWeek.Sunday && _shuffledMenu.Count != 0)
+                return;
+
+            var menus = _menu.ToArray();
+
+            FisherYates.Shuffle(menus);
+
+            _shuffledMenu.Clear();
+            foreach (var menu in menus)
+            {
+                _shuffledMenu.Enqueue(menu);
             }
         }
 
@@ -122,7 +141,7 @@ namespace MenuSelector
         private async Task Notice()
         {
             var channels = ConfigurationManager.AppSettings["Channels"].Split(',');
-            var menu = Choice();
+            var menu = Choose();
 
             foreach (var channel in channels)
                 await Notice(channel, menu);
@@ -155,11 +174,33 @@ namespace MenuSelector
             }
         }
 
-        private string Choice()
+        private string Choose()
         {
-            var r = new Random(Guid.NewGuid().GetHashCode() ^ Guid.NewGuid().GetHashCode());
+            return _shuffledMenu.Dequeue();
+        }
 
-            return _menu.ElementAt(r.Next(0, _menu.Count - 1));
+        private class FisherYates
+        {
+            private static Random Random { get; set; }
+
+            static FisherYates()
+            {
+                Random = new Random(Guid.NewGuid().GetHashCode() ^ Guid.NewGuid().GetHashCode());
+            }
+
+            public static void Shuffle<T>(T[] array)
+            {
+                for (var i = 0; i < array.Length; i++)
+                {
+                    var j = i + Random.Next(array.Length - i);
+                    var temp = array[j];
+                    array[j] = array[i];
+                    array[i] = temp;
+                }
+
+                //Queue<T> queue = new Queue<T>(array);
+                //return queue;
+            }
         }
     }
 }
