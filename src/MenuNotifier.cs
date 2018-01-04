@@ -2,13 +2,12 @@
 using System.Configuration;
 using System.Net;
 using System.Threading.Tasks;
-using RestSharp;
 
 namespace MenuSelector
 {
     public class MenuNotifier
     {
-        private readonly RestClient _restClient = new RestClient(ConfigurationManager.AppSettings["WebhookUrl"]);
+        private SlackNotifier _notifier = new SlackNotifier("Today's Menu");
 
         private int _noticeHour;
         private int _noticeMin;
@@ -55,36 +54,10 @@ namespace MenuSelector
 
         public async Task Notice(string menu)
         {
-            var channels = ConfigurationManager.AppSettings["Channels"].Split(',');
-
-            foreach (var channel in channels)
-                await Notice(channel, menu);
-        }
-
-        private async Task Notice(string channel, string menu)
-        {
-            var request = new RestRequest
+            var statusCode = await _notifier.Notice(menu);
+            if (statusCode != HttpStatusCode.OK)
             {
-                Method = Method.POST,
-                RequestFormat = DataFormat.Json,
-            };
-            request.AddJsonBody(new
-            {
-                channel = channel,
-                username = "Today's Menu",
-                attachments = new[]
-				{
-					new
-					{
-						text = "<!here> " + menu,
-						mrkdwn_in = new [] { "text" }
-					}
-				}
-            });
-            var response = await _restClient.ExecuteTaskAsync(request);
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                Logger.Log(string.Format("notice error ({0})", response.StatusCode));
+                Logger.Log(string.Format("notice error ({0})", statusCode));
             }
         }
     }
