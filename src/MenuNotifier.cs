@@ -1,26 +1,51 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
 namespace MenuSelector
 {
+    public class NoticeTime
+    {
+        public int NoticeHour { get; set; }
+        public int NoticeMin { get; set; }
+        public bool NoticeSent { get; set; }
+    }
+
     public class MenuNotifier
     {
         private SlackNotifier _notifier = new SlackNotifier("Today's Menu");
 
-        private int _noticeHour;
-        private int _noticeMin;
         private DayOfWeek LastDayOfWeek { get; set; }
+
+        private List<NoticeTime> _noticeTimes = new List<NoticeTime>();
 
         public bool Initialize()
         {
-            var noticeTime = ConfigurationManager.AppSettings["NoticeTime"].Split(':');
+            var noticeTimes = ConfigurationManager.AppSettings["NoticeTime"].Split(',');
 
-            if (int.TryParse(noticeTime[0], out _noticeHour) == false)
-                return false;
+            foreach (var time in noticeTimes)
+            {
+                var noticeTime = time.Split(':');
+                int hour;
+                int min;
+                if (int.TryParse(noticeTime[0], out hour) == false)
+                    return false;
 
-            if (int.TryParse(noticeTime[1], out _noticeMin) == false)
+                if (int.TryParse(noticeTime[1], out min) == false)
+                    return false;
+
+                _noticeTimes.Add(new NoticeTime()
+                {
+                    NoticeHour = hour,
+                    NoticeMin = min,
+                    NoticeSent = false,
+                });
+            }
+
+            if (_noticeTimes.Any() == false)
                 return false;
 
             return true;
@@ -29,7 +54,12 @@ namespace MenuSelector
         public bool IsTimeUp()
         {
             var now = DateTime.Now;
-            if (now.DayOfWeek == LastDayOfWeek)
+            if (now.DayOfWeek != LastDayOfWeek)
+            {
+                _noticeTimes.ForEach(x => x.NoticeSent = false);
+            }
+
+            if (_noticeTimes.All(x => x.NoticeSent))
                 return false;
 
             switch (now.DayOfWeek)
@@ -39,9 +69,18 @@ namespace MenuSelector
                 case DayOfWeek.Wednesday:
                 case DayOfWeek.Thursday:
                 case DayOfWeek.Friday:
-                    if (now.Hour != _noticeHour || now.Minute != _noticeMin)
-                        return false;
-                    break;
+                    var noticeTime =
+                        _noticeTimes.FirstOrDefault(
+                           x => x.NoticeHour == now.Hour && x.NoticeMin == now.Minute &&
+                                                  x.NoticeSent == false);
+                    if (noticeTime != null)
+                    {
+                        noticeTime.NoticeSent = true;
+                        break;
+                    }
+
+                    return false;
+
 
                 default:
                     return false;
