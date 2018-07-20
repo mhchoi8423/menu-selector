@@ -69,17 +69,16 @@ namespace MenuSelector
                 case DayOfWeek.Wednesday:
                 case DayOfWeek.Thursday:
                 case DayOfWeek.Friday:
-                    var noticeTime =
-                        _noticeTimes.FirstOrDefault(
-                           x => x.NoticeHour == now.Hour && x.NoticeMin == now.Minute &&
-                                                  x.NoticeSent == false);
-                    if (noticeTime != null)
-                    {
-                        noticeTime.NoticeSent = true;
-                        break;
-                    }
+                    var noticeTime = _noticeTimes.FirstOrDefault(x =>
+                        x.NoticeHour == now.Hour &&
+                        x.NoticeMin == now.Minute &&
+                        x.NoticeSent == false);
 
-                    return false;
+                    if (noticeTime == null)
+                        return false;
+
+                    noticeTime.NoticeSent = true;
+                    break;
 
 
                 default:
