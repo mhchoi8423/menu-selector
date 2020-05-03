@@ -62,32 +62,26 @@ namespace MenuSelector
             if (_noticeTimes.All(x => x.NoticeSent))
                 return false;
 
-            switch (now.DayOfWeek)
-            {
-                case DayOfWeek.Monday:
-                case DayOfWeek.Tuesday:
-                case DayOfWeek.Wednesday:
-                case DayOfWeek.Thursday:
-                case DayOfWeek.Friday:
-                    var noticeTime = _noticeTimes.FirstOrDefault(x =>
-                        x.NoticeHour == now.Hour &&
-                        x.NoticeMin == now.Minute &&
-                        x.NoticeSent == false);
+            if (IsWorkDay(now) == false)
+                return false;
 
-                    if (noticeTime == null)
-                        return false;
+            var noticeTime = _noticeTimes.FirstOrDefault(x => x.NoticeHour == now.Hour &&
+                                                              x.NoticeMin == now.Minute &&
+                                                              x.NoticeSent == false);
+            if (noticeTime == null)
+                return false;
 
-                    noticeTime.NoticeSent = true;
-                    break;
-
-
-                default:
-                    return false;
-            }
+            noticeTime.NoticeSent = true;
 
             LastDayOfWeek = now.DayOfWeek;
 
             return true;
+        }
+
+        private readonly HolidayAgent _holidayAgent = new HolidayAgent();
+        private bool IsWorkDay(DateTime now)
+        {
+            return _holidayAgent.CheckWorkDay(now);
         }
 
         public async Task Notice(string menu)

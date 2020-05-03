@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FisherYates.cs" />
+    <Compile Include="HolidayAgent.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MenuLoader.cs" />
     <Compile Include="MenuNotifier.cs" />
